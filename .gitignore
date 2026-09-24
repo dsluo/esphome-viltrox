@@ -1,0 +1,13 @@
+__pycache__/
+*.py[oc]
+
+# Vendor app and decompiled sources; never publish
+reverse_engineering/
+
+# ESPHome
+.esphome/
+secrets.yaml
+
+# Local tooling
+.DS_Store
+.claude/

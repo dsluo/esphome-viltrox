@@ -1,0 +1,88 @@
+# Example ESPHome device: an ESP32 that controls Viltrox LED panels (the
+# WeeyliteII app's protocol) and shows each panel group in Home Assistant as
+# a light.
+#
+#   esphome run example.yaml
+
+esphome:
+  name: viltrox
+  friendly_name: Viltrox
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+logger:
+
+api:
+  encryption:
+    key: !secret viltrox_api_key
+
+ota:
+  - platform: esphome
+    password: !secret viltrox_ota_password
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+external_components:
+  - source: github://dsluo/esphome-viltrox
+    components: [viltrox]
+
+viltrox:
+  # All optional; these are the defaults.
+  # major: 10
+  # minor: 110
+  # measured_power: -59
+  # command_interval: 300ms
+  # tx_power: 9dBm
+
+light:
+  - platform: viltrox
+    name: Key Light
+    channel: 1  # CH number in the WeeyliteII app
+    group: A    # group letter in the app
+    # The app's range; narrow it if your panel can't reach the ends.
+    cold_white_color_temperature: 8500 K
+    warm_white_color_temperature: 2500 K
+    # Adds a Slow/Medium/Fast select for the scene effects' speed.
+    effect_speed: Effect Speed
+    # Adds a -10..10 red/green tint slider for color temperature mode.
+    tint_control: Tint
+    # Adds a button that sends the current state again, for when the panel
+    # was changed with its own buttons or the app.
+    resend_button: Resend
+    # Adds a select with the app's 40 Rosco and Lee gel presets.
+    gel_select: Gel
+    # All 26 of the app's scenes are added as effects automatically. To pick
+    # your own, list them instead (a scene with its own speed ignores the
+    # select):
+    # effects:
+    #   - viltrox_scene:
+    #       scene: Candlelight
+    #       speed: 1
+    #   - viltrox_scene:
+    #       name: Party
+    #       scene: Club 1
+    #       speed: 3
+
+# Device diagnostics (standard ESPHome components, optional)
+sensor:
+  - platform: wifi_signal
+    name: WiFi Signal
+    update_interval: 60s
+  - platform: uptime
+    name: Uptime
+
+text_sensor:
+  - platform: version
+    name: Firmware Version
+
+button:
+  - platform: restart
+    name: Restart
+
+# To run this on your Bluetooth proxy instead, add the viltrox: and light:
+# blocks above to its config alongside bluetooth_proxy:. See README.md.
