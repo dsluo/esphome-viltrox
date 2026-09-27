@@ -77,6 +77,21 @@ Format: EF[CH]0300-64FF-FFFF-0000-001122FE[ID][PWR]
 Example: EF080300-64FF-FFFF-0000-001122FE0264
 ```
 
+#### Observed Power-On Behavior
+
+Seen on one set of panels:
+
+- Power on restores the panel's last lighting state, including brightness.
+  Sending a lighting command only after power on makes the panel show its old
+  brightness until that command arrives.
+- The brightness bytes in the power-on command don't change this. Sending the
+  target brightness in byte 4 (where the app always sends `0x64`) and in the
+  final POWER byte still brought the panel up at its old brightness.
+- Sending the lighting command first, then power on, brings the panel up at
+  the new brightness. It's not confirmed whether a panel that's off stores the
+  lighting command until power on, or turns on from the lighting command
+  itself.
+
 ### Lighting Control Commands
 
 #### HSI Mode (Mode 1)
