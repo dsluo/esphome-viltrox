@@ -31,10 +31,13 @@ static Frame make_frame(std::initializer_list<int> body, uint8_t power) {
   return frame;
 }
 
-// Power commands address every group on the channel (group bits 0).
+// Power commands address every group on the channel (group bits 0). The app
+// always sends 0x64 (100) in byte 4, the brightness byte of lighting commands;
+// power-on sends the target brightness there instead, so the panel doesn't
+// flash at 100% before the lighting command arrives.
 static Frame encode_power(bool on, uint8_t channel, uint8_t power) {
-  return make_frame({HEAD, channel_group(channel, 0), on ? 0x04 : 0x03, 0x00, 0x64, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00,
-                     0x11, 0x22, TAIL},
+  return make_frame({HEAD, channel_group(channel, 0), on ? 0x04 : 0x03, 0x00, on ? power : 0x64, 0xFF, 0xFF, 0xFF, 0x00,
+                     0x00, 0x00, 0x11, 0x22, TAIL},
                     power);
 }
 
