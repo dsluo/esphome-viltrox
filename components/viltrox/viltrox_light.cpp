@@ -31,13 +31,10 @@ static Frame make_frame(std::initializer_list<int> body, uint8_t power) {
   return frame;
 }
 
-// Power commands address every group on the channel (group bits 0). The app
-// always sends 0x64 (100) in byte 4, the brightness byte of lighting commands;
-// power-on sends the target brightness there instead, so the panel doesn't
-// flash at 100% before the lighting command arrives.
+// Power commands address every group on the channel (group bits 0).
 static Frame encode_power(bool on, uint8_t channel, uint8_t power) {
-  return make_frame({HEAD, channel_group(channel, 0), on ? 0x04 : 0x03, 0x00, on ? power : 0x64, 0xFF, 0xFF, 0xFF, 0x00,
-                     0x00, 0x00, 0x11, 0x22, TAIL},
+  return make_frame({HEAD, channel_group(channel, 0), on ? 0x04 : 0x03, 0x00, 0x64, 0xFF, 0xFF, 0xFF, 0x00, 0x00, 0x00,
+                     0x11, 0x22, TAIL},
                     power);
 }
 
@@ -77,6 +74,18 @@ bool ViltroxLight::next_frame(Frame &frame) {
   const auto &values = this->state_->remote_values;
   const bool on = values.is_on();
   const auto power = static_cast<uint8_t>(std::clamp<long>(std::lround(values.get_brightness() * 100.0f), 0, 100));
+
+  // Power-on restores the panel's last lighting state, so send the target one
+  // first. Otherwise the panel shows its old brightness until the lighting
+  // command after power-on arrives.
+  if (on && this->sent_on_ != on) {
+    const Frame lighting = this->lighting_frame_(power);
+    if (this->sent_lighting_ != lighting) {
+      frame = lighting;
+      this->sent_lighting_ = lighting;
+      return true;
+    }
+  }
 
   if (this->sent_on_ != on) {
     frame = encode_power(on, this->channel_, power);
